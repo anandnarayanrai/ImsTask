@@ -68,7 +68,6 @@ class ExpandableExampleAdapter
 
     public ExpandableExampleAdapter(AbstractExpandableDataProvider dataProvider) {
         mProvider = dataProvider;
-
         // ExpandableItemAdapter requires stable ID, and also
         // have to implement the getGroupItemId()/getChildItemId() methods appropriately.
         setHasStableIds(true);

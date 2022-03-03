@@ -16,10 +16,11 @@ import com.h6ah4i.android.widget.advrecyclerview.animator.RefactoredDefaultItemA
 import com.h6ah4i.android.widget.advrecyclerview.decoration.ItemShadowDecorator
 import com.h6ah4i.android.widget.advrecyclerview.decoration.SimpleListDividerDecorator
 import com.h6ah4i.android.widget.advrecyclerview.expandable.RecyclerViewExpandableItemManager
-import com.ims.imstask.MainActivity
 import com.ims.imstask.R
 import com.ims.imstask.data.AbstractExpandableDataProvider
+import com.ims.imstask.data.ExampleExpandableDataProvider
 import com.ims.imstask.databinding.MainFragmentBinding
+import com.ims.imstask.retrofit.BookingSlotsResponseItem
 
 class MainFragment : Fragment(), RecyclerViewExpandableItemManager.OnGroupCollapseListener,
     RecyclerViewExpandableItemManager.OnGroupExpandListener {
@@ -41,6 +42,8 @@ class MainFragment : Fragment(), RecyclerViewExpandableItemManager.OnGroupCollap
     private var mWrappedAdapter: RecyclerView.Adapter<*>? = null
     private var mLayoutManager: RecyclerView.LayoutManager? = null
 
+    private var mDataProvider: ExampleExpandableDataProvider? = null
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -55,15 +58,25 @@ class MainFragment : Fragment(), RecyclerViewExpandableItemManager.OnGroupCollap
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
         mBinding.recyclerView.layoutManager = LinearLayoutManager(activity)
         cardsRecyclerAdapter = BookingSlotsListAdapter()
-       // mBinding.recyclerView.adapter = cardsRecyclerAdapter
-
         val eimSavedState =
             savedInstanceState?.getParcelable<Parcelable>(SAVED_STATE_EXPANDABLE_ITEM_MANAGER)
         mRecyclerViewExpandableItemManager = RecyclerViewExpandableItemManager(eimSavedState)
         mRecyclerViewExpandableItemManager?.setOnGroupExpandListener(this)
         mRecyclerViewExpandableItemManager?.setOnGroupCollapseListener(this)
 
-        //adapter
+        listenToViewModel()
+    }
+
+    private fun listenToViewModel() {
+        viewModel.getMasterResponse.observe(viewLifecycleOwner) {
+            it?.let { it1 ->
+                setData(it1)
+            }
+        }
+    }
+
+    private fun setData(itemList: List<BookingSlotsResponseItem?>) {
+        mDataProvider = ExampleExpandableDataProvider()
 
         //adapter
         val myItemAdapter = ExpandableExampleAdapter(getDataProvider())
@@ -73,22 +86,12 @@ class MainFragment : Fragment(), RecyclerViewExpandableItemManager.OnGroupCollap
         mWrappedAdapter = mRecyclerViewExpandableItemManager!!.createWrappedAdapter(myItemAdapter) // wrap for expanding
 
         val animator: GeneralItemAnimator = RefactoredDefaultItemAnimator()
-
-        // Change animations are enabled by default since support-v7-recyclerview v22.
-        // Need to disable them when using animation indicator.
-
-        // Change animations are enabled by default since support-v7-recyclerview v22.
-        // Need to disable them when using animation indicator.
         animator.supportsChangeAnimations = false
 
-        mBinding.recyclerView.layoutManager = mLayoutManager
         mBinding.recyclerView.adapter = mWrappedAdapter // requires *wrapped* adapter
 
         mBinding.recyclerView.itemAnimator = animator
         mBinding.recyclerView.setHasFixedSize(false)
-
-        // additional decorations
-        //noinspection StatementWithEmptyBody
 
         mBinding.recyclerView.addItemDecoration(
             ItemShadowDecorator(
@@ -108,14 +111,6 @@ class MainFragment : Fragment(), RecyclerViewExpandableItemManager.OnGroupCollap
         )
 
         mRecyclerViewExpandableItemManager!!.attachRecyclerView(mBinding.recyclerView)
-
-        listenToViewModel()
-    }
-
-    private fun listenToViewModel() {
-        viewModel.getMasterResponse.observe(viewLifecycleOwner) {
-            it?.let { it1 -> cardsRecyclerAdapter?.setItemList(it1) }
-        }
     }
 
     override fun onGroupCollapse(groupPosition: Int, fromUser: Boolean, payload: Any?) {
@@ -129,7 +124,8 @@ class MainFragment : Fragment(), RecyclerViewExpandableItemManager.OnGroupCollap
     }
 
     private fun adjustScrollPositionOnGroupExpanded(groupPosition: Int) {
-        val childItemHeight = requireActivity().resources.getDimensionPixelSize(R.dimen.list_item_height)
+        val childItemHeight =
+            requireActivity().resources.getDimensionPixelSize(R.dimen.list_item_height)
         val topMargin =
             (requireActivity().resources.displayMetrics.density * 16).toInt() // top-spacing: 16dp
         mRecyclerViewExpandableItemManager!!.scrollToGroup(
@@ -141,7 +137,7 @@ class MainFragment : Fragment(), RecyclerViewExpandableItemManager.OnGroupCollap
     }
 
     private fun getDataProvider(): AbstractExpandableDataProvider? {
-        return (activity as MainActivity?)?.getDataProvider()
+        return mDataProvider
     }
 
 }
