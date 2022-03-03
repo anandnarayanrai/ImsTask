@@ -17,13 +17,14 @@ import com.h6ah4i.android.widget.advrecyclerview.decoration.ItemShadowDecorator
 import com.h6ah4i.android.widget.advrecyclerview.decoration.SimpleListDividerDecorator
 import com.h6ah4i.android.widget.advrecyclerview.expandable.RecyclerViewExpandableItemManager
 import com.ims.imstask.R
-import com.ims.imstask.data.AbstractExpandableDataProvider
-import com.ims.imstask.data.ExampleExpandableDataProvider
 import com.ims.imstask.databinding.MainFragmentBinding
+import com.ims.imstask.retrofit.BookingSlotsChildItem
+import com.ims.imstask.retrofit.BookingSlotsParentItem
 import com.ims.imstask.retrofit.BookingSlotsResponseItem
+import com.ims.imstask.ui.main.DateUtils.getDateFromDateTime
+import com.ims.imstask.ui.main.DateUtils.getTimeType
 
-class MainFragment : Fragment(), RecyclerViewExpandableItemManager.OnGroupCollapseListener,
-    RecyclerViewExpandableItemManager.OnGroupExpandListener {
+class MainFragment : Fragment() {
 
     private val SAVED_STATE_EXPANDABLE_ITEM_MANAGER = "RecyclerViewExpandableItemManager"
 
@@ -35,14 +36,9 @@ class MainFragment : Fragment(), RecyclerViewExpandableItemManager.OnGroupCollap
 
     private lateinit var mBinding: MainFragmentBinding
 
-    private var cardsRecyclerAdapter: BookingSlotsListAdapter? = null
-
     private var mRecyclerViewExpandableItemManager: RecyclerViewExpandableItemManager? = null
 
     private var mWrappedAdapter: RecyclerView.Adapter<*>? = null
-    private var mLayoutManager: RecyclerView.LayoutManager? = null
-
-    private var mDataProvider: ExampleExpandableDataProvider? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -57,12 +53,9 @@ class MainFragment : Fragment(), RecyclerViewExpandableItemManager.OnGroupCollap
         super.onViewCreated(view, savedInstanceState)
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
         mBinding.recyclerView.layoutManager = LinearLayoutManager(activity)
-        cardsRecyclerAdapter = BookingSlotsListAdapter()
         val eimSavedState =
             savedInstanceState?.getParcelable<Parcelable>(SAVED_STATE_EXPANDABLE_ITEM_MANAGER)
         mRecyclerViewExpandableItemManager = RecyclerViewExpandableItemManager(eimSavedState)
-        mRecyclerViewExpandableItemManager?.setOnGroupExpandListener(this)
-        mRecyclerViewExpandableItemManager?.setOnGroupCollapseListener(this)
 
         listenToViewModel()
     }
@@ -70,28 +63,30 @@ class MainFragment : Fragment(), RecyclerViewExpandableItemManager.OnGroupCollap
     private fun listenToViewModel() {
         viewModel.getMasterResponse.observe(viewLifecycleOwner) {
             it?.let { it1 ->
+                mBinding.progressBar.visibility = View.GONE
+                mBinding.recyclerView.visibility = View.VISIBLE
                 setData(it1)
             }
         }
     }
 
-    private fun setData(itemList: List<BookingSlotsResponseItem?>) {
-        mDataProvider = ExampleExpandableDataProvider()
+    private fun setData(bookingSlots: List<BookingSlotsResponseItem?>) {
 
-        //adapter
-        val myItemAdapter = ExpandableExampleAdapter(getDataProvider())
+        val bookingSlotsParentItemList = ArrayList<BookingSlotsParentItem>()
+        bookingSlotsParentItemList.add(onSlotsFilter("Early Morning", bookingSlots, 2, 7))
+        bookingSlotsParentItemList.add(onSlotsFilter("Morning", bookingSlots, 7, 12))
+        bookingSlotsParentItemList.add(onSlotsFilter("Afternoon", bookingSlots, 12, 15))
+        bookingSlotsParentItemList.add(onSlotsFilter("Evening", bookingSlots, 15, 18))
+        bookingSlotsParentItemList.add(onSlotsFilter("All Booking (Today)", bookingSlots, 0, 24))
 
-        mLayoutManager = LinearLayoutManager(requireActivity())
-
-        mWrappedAdapter = mRecyclerViewExpandableItemManager!!.createWrappedAdapter(myItemAdapter) // wrap for expanding
-
+        val myItemAdapter = ExpandableExampleAdapter(bookingSlotsParentItemList)
+        mWrappedAdapter =
+            mRecyclerViewExpandableItemManager!!.createWrappedAdapter(myItemAdapter) // wrap for expanding
         val animator: GeneralItemAnimator = RefactoredDefaultItemAnimator()
         animator.supportsChangeAnimations = false
-
         mBinding.recyclerView.adapter = mWrappedAdapter // requires *wrapped* adapter
 
         mBinding.recyclerView.itemAnimator = animator
-        mBinding.recyclerView.setHasFixedSize(false)
 
         mBinding.recyclerView.addItemDecoration(
             ItemShadowDecorator(
@@ -113,31 +108,33 @@ class MainFragment : Fragment(), RecyclerViewExpandableItemManager.OnGroupCollap
         mRecyclerViewExpandableItemManager!!.attachRecyclerView(mBinding.recyclerView)
     }
 
-    override fun onGroupCollapse(groupPosition: Int, fromUser: Boolean, payload: Any?) {
-        //TODO("Not yet implemented")
-    }
-
-    override fun onGroupExpand(groupPosition: Int, fromUser: Boolean, payload: Any?) {
-        if (fromUser) {
-            adjustScrollPositionOnGroupExpanded(groupPosition)
+    private fun onSlotsFilter(
+        header: String,
+        bookingSlots: List<BookingSlotsResponseItem?>,
+        fStartTime: Int,
+        fEndTime: Int
+    ): BookingSlotsParentItem {
+        var slotsAvailable = 0
+        val slotsList = ArrayList<BookingSlotsChildItem>()
+        for (item in bookingSlots) {
+            item?.let {
+                if (getTimeType(it.startTime!!) in fStartTime..fEndTime) {
+                    slotsList.add(
+                        BookingSlotsChildItem(
+                            timeSlots = "${getDateFromDateTime(it.startTime)} - ${
+                                getDateFromDateTime(
+                                    it.endTime!!
+                                )
+                            }", isBooked = it.isBooked!!
+                        )
+                    )
+                    if (!it.isBooked) {
+                        slotsAvailable += 1
+                    }
+                }
+            }
         }
-    }
-
-    private fun adjustScrollPositionOnGroupExpanded(groupPosition: Int) {
-        val childItemHeight =
-            requireActivity().resources.getDimensionPixelSize(R.dimen.list_item_height)
-        val topMargin =
-            (requireActivity().resources.displayMetrics.density * 16).toInt() // top-spacing: 16dp
-        mRecyclerViewExpandableItemManager!!.scrollToGroup(
-            groupPosition,
-            childItemHeight,
-            topMargin,
-            topMargin
-        )
-    }
-
-    private fun getDataProvider(): AbstractExpandableDataProvider? {
-        return mDataProvider
+        return BookingSlotsParentItem(header, slotsAvailable, slotsList)
     }
 
 }

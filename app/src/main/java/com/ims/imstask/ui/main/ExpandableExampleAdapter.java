@@ -28,27 +28,21 @@ import com.h6ah4i.android.widget.advrecyclerview.expandable.ExpandableItemState;
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractExpandableItemAdapter;
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractExpandableItemViewHolder;
 import com.ims.imstask.R;
-import com.ims.imstask.data.AbstractExpandableDataProvider;
+import com.ims.imstask.retrofit.BookingSlotsChildItem;
+import com.ims.imstask.retrofit.BookingSlotsParentItem;
 import com.ims.imstask.widget.ExpandableItemIndicator;
+
+import java.util.ArrayList;
 
 class ExpandableExampleAdapter
         extends AbstractExpandableItemAdapter<ExpandableExampleAdapter.MyGroupViewHolder, ExpandableExampleAdapter.MyChildViewHolder> {
     private static final String TAG = "MyExpandableItemAdapter";
 
-    // NOTE: Make accessible with short name
-    private final AbstractExpandableDataProvider mProvider;
+    private final ArrayList<BookingSlotsParentItem> mItemList = new ArrayList<>();
 
-    public static abstract class MyBaseViewHolder extends AbstractExpandableItemViewHolder {
-        public LinearLayout mContainer;
-        public TextView mTextView;
-        public TextView tvTime;
-
-        public MyBaseViewHolder(View v) {
-            super(v);
-            mContainer = v.findViewById(R.id.container);
-            mTextView = v.findViewById(android.R.id.text1);
-            tvTime = v.findViewById(R.id.tvTime);
-        }
+    public ExpandableExampleAdapter(ArrayList<BookingSlotsParentItem> mItemList) {
+        this.mItemList.addAll(mItemList);
+        setHasStableIds(true);
     }
 
     public static class MyGroupViewHolder extends MyBaseViewHolder {
@@ -66,31 +60,44 @@ class ExpandableExampleAdapter
         }
     }
 
-    public ExpandableExampleAdapter(AbstractExpandableDataProvider dataProvider) {
-        mProvider = dataProvider;
-        // ExpandableItemAdapter requires stable ID, and also
-        // have to implement the getGroupItemId()/getChildItemId() methods appropriately.
-        setHasStableIds(true);
-    }
-
     @Override
     public int getGroupCount() {
-        return mProvider.getGroupCount();
+        return mItemList.size();
     }
 
     @Override
     public int getChildCount(int groupPosition) {
-        return mProvider.getChildCount(groupPosition);
+        return mItemList.get(groupPosition).getChildItem().size();
     }
 
     @Override
     public long getGroupId(int groupPosition) {
-        return mProvider.getGroupItem(groupPosition).getGroupId();
+        return (long) groupPosition;
     }
 
     @Override
     public long getChildId(int groupPosition, int childPosition) {
-        return mProvider.getChildItem(groupPosition, childPosition).getChildId();
+        return (long) childPosition;
+    }
+
+    @Override
+    public void onBindGroupViewHolder(@NonNull MyGroupViewHolder holder, int groupPosition, int viewType) {
+        final BookingSlotsParentItem item = this.mItemList.get(groupPosition);
+        holder.tvHeader.setText(item.getHeader());
+        holder.tvChildCount.setText(item.getSlotsAvailable() + " Slots available");
+
+        holder.itemView.setClickable(true);
+
+        final ExpandableItemState expandState = holder.getExpandState();
+
+        if (expandState.isUpdated()) {
+            int bgResId;
+            boolean animateIndicator = expandState.hasExpandedStateChanged();
+
+            bgResId = R.drawable.bg_item_normal_state;
+            holder.mContainer.setBackgroundResource(bgResId);
+            holder.mIndicator.setExpandedState(expandState.isExpanded(), animateIndicator);
+        }
     }
 
     @Override
@@ -120,58 +127,39 @@ class ExpandableExampleAdapter
     }
 
     @Override
-    public void onBindGroupViewHolder(@NonNull MyGroupViewHolder holder, int groupPosition, int viewType) {
-        // child item
-        final AbstractExpandableDataProvider.BaseData item = mProvider.getGroupItem(groupPosition);
+    public void onBindChildViewHolder(@NonNull MyChildViewHolder holder, int groupPosition, int childPosition, int viewType) {
 
-        // set text
-        holder.mTextView.setText(item.getText());
-        holder.tvTime.setText(item.getText());
+        final BookingSlotsChildItem item = this.mItemList.get(groupPosition).getChildItem().get(childPosition);
 
-        // mark as clickable
-        holder.itemView.setClickable(true);
+        holder.tvChild.setText(item.getTimeSlots());
 
-        // set background resource (target view ID: container)
-        final ExpandableItemState expandState = holder.getExpandState();
+        int bgResId;
 
-        if (expandState.isUpdated()) {
-            int bgResId;
-            boolean animateIndicator = expandState.hasExpandedStateChanged();
-
-         /*   if (expandState.isExpanded()) {
-                bgResId = R.drawable.bg_group_item_expanded_state;
-            } else {
-                bgResId = R.drawable.bg_group_item_normal_state;
-            }*/
-
-            bgResId = R.drawable.bg_item_normal_state;
-            holder.mContainer.setBackgroundResource(bgResId);
-            holder.mIndicator.setExpandedState(expandState.isExpanded(), animateIndicator);
+        if (item.isBooked()) {
+            bgResId = R.drawable.bg_slots_booked_state;
+        } else {
+            bgResId = R.drawable.bg_slots_available_state;
         }
+        holder.mContainer.setBackgroundResource(bgResId);
     }
 
-    @Override
-    public void onBindChildViewHolder(@NonNull MyChildViewHolder holder, int groupPosition, int childPosition, int viewType) {
-        // group item
-        final AbstractExpandableDataProvider.ChildData item = mProvider.getChildItem(groupPosition, childPosition);
+    public static abstract class MyBaseViewHolder extends AbstractExpandableItemViewHolder {
+        public LinearLayout mContainer;
+        public TextView tvHeader;
+        public TextView tvChildCount;
+        public TextView tvChild;
 
-        // set text
-        holder.mTextView.setText(item.getText());
-
-        // set background resource (target view ID: container)
-        int bgResId;
-        bgResId = R.drawable.bg_item_normal_state;
-        holder.mContainer.setBackgroundResource(bgResId);
+        public MyBaseViewHolder(View v) {
+            super(v);
+            mContainer = v.findViewById(R.id.container);
+            tvHeader = v.findViewById(R.id.tvHeader);
+            tvChildCount = v.findViewById(R.id.tvChildCount);
+            tvChild = v.findViewById(R.id.tvChild);
+        }
     }
 
     @Override
     public boolean onCheckCanExpandOrCollapseGroup(@NonNull MyGroupViewHolder holder, int groupPosition, int x, int y, boolean expand) {
-        // check the item is *not* pinned
-        if (mProvider.getGroupItem(groupPosition).isPinned()) {
-            // return false to raise View.OnClickListener#onClick() event
-            return false;
-        }
-
         // check is enabled
         if (!(holder.itemView.isEnabled() && holder.itemView.isClickable())) {
             return false;

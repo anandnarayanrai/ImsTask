@@ -20,6 +20,26 @@
         <entry key="..\:/AndroidStudioProjects/ImsTask/app/src/main/res/layout/main_activity.xml" value="0.37135416666666665" />
         <entry key="..\:/AndroidStudioProjects/ImsTask/app/src/main/res/layout/main_fragment.xml" value="0.2" />
         <entry key="..\:/AndroidStudioProjects/ImsTask/app/src/main/res/layout/widget_expandable_item_indicator.xml" value="0.37135416666666665" />
+        <entry key="app/src/main/res/drawable/bg_booking_slots_available_state.xml" value="0.122" />
+        <entry key="app/src/main/res/drawable/bg_group_item_expanded_state.xml" value="0.1445" />
+        <entry key="app/src/main/res/drawable/bg_group_item_normal_state.xml" value="0.1445" />
+        <entry key="app/src/main/res/drawable/bg_item_normal_state.xml" value="0.1445" />
+        <entry key="app/src/main/res/drawable/bg_slots_booked_state.xml" value="0.122" />
+        <entry key="app/src/main/res/drawable/bg_slots_booking_state.xml" value="0.122" />
+        <entry key="app/src/main/res/drawable/ic_expand_less.xml" value="0.1445" />
+        <entry key="app/src/main/res/drawable/ic_expand_less_to_expand_more.xml" value="0.1445" />
+        <entry key="app/src/main/res/drawable/ic_expand_more.xml" value="0.1445" />
+        <entry key="app/src/main/res/drawable/ic_expand_more_to_expand_less.xml" value="0.1445" />
+        <entry key="app/src/main/res/drawable/ic_launcher_background.xml" value="0.1445" />
+        <entry key="app/src/main/res/drawable/list_divider_h.xml" value="0.122" />
+        <entry key="app/src/main/res/drawable/material_shadow_z1.xml" value="0.1445" />
+        <entry key="app/src/main/res/drawable/shape_circle.xml" value="0.1445" />
+        <entry key="app/src/main/res/layout/list_group_item.xml" value="0.25052083333333336" />
+        <entry key="app/src/main/res/layout/list_item.xml" value="0.25052083333333336" />
+        <entry key="app/src/main/res/layout/loader.xml" value="0.25052083333333336" />
+        <entry key="app/src/main/res/layout/main_activity.xml" value="0.25052083333333336" />
+        <entry key="app/src/main/res/layout/main_fragment.xml" value="0.22685185185185186" />
+        <entry key="app/src/main/res/layout/widget_expandable_item_indicator.xml" value="0.25" />
       </map>
     </option>
   </component>
