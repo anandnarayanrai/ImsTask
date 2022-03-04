@@ -9,7 +9,7 @@
     <LinearLayout
         android:id="@+id/container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:background="@color/white"
         android:clickable="true"
         android:foreground="?attr/selectableItemBackground"
@@ -20,7 +20,7 @@
             android:id="@+id/tvChild"
             android:layout_width="match_parent"
             android:gravity="start|center"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_gravity="top|left"
             android:textColor="@color/black"
             tools:ignore="RtlHardcoded"
